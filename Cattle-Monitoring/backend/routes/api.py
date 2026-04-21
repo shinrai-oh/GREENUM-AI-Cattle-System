@@ -202,6 +202,38 @@ def search_data():
             'error': str(e)
         }), 500
 
+
+@api_bp.route('/cattle/<int:cattle_id>', methods=['PUT'])
+def update_cattle(cattle_id):
+    """更新牛只基本信息"""
+    try:
+        cattle = Cattle.query.get(cattle_id)
+        if not cattle:
+            return jsonify({'success': False, 'message': '牛只不存在'}), 404
+
+        data = request.get_json() or {}
+        allowed = ['breed', 'weight', 'status', 'birth_date', 'gender']
+        for field in allowed:
+            if field in data:
+                if field == 'birth_date' and data[field]:
+                    try:
+                        cattle.birth_date = datetime.strptime(data[field][:10], '%Y-%m-%d').date()
+                    except ValueError:
+                        return jsonify({'success': False, 'message': '出生日期格式错误，应为 YYYY-MM-DD'}), 400
+                elif field == 'weight' and data[field] is not None:
+                    cattle.weight = float(data[field])
+                else:
+                    setattr(cattle, field, data[field])
+
+        cattle.updated_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'success': True, 'message': '更新成功', 'data': cattle.to_dict()})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error updating cattle {cattle_id}: {str(e)}')
+        return jsonify({'success': False, 'message': '更新失败', 'error': str(e)}), 500
+
 @api_bp.route('/system/status', methods=['GET'])
 def get_system_status():
     """获取系统状态"""

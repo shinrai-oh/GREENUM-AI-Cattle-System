@@ -220,20 +220,83 @@
 
           <el-card title="操作" style="margin-top: 20px;">
             <div class="action-buttons">
-              <el-button type="primary" style="width: 100%; margin-bottom: 12px;">
+              <el-button type="primary" style="width: 100%; margin-bottom: 12px;" @click="handleExport">
                 <el-icon><Download /></el-icon>
                 导出数据
               </el-button>
-              <el-button type="success" style="width: 100%; margin-bottom: 12px;">
+              <el-button type="success" style="width: 100%; margin-bottom: 12px;" @click="reminderDialogVisible = true">
                 <el-icon><Bell /></el-icon>
                 设置提醒
               </el-button>
-              <el-button type="warning" style="width: 100%;">
+              <el-button type="warning" style="width: 100%;" @click="openEditDialog">
                 <el-icon><Edit /></el-icon>
                 编辑信息
               </el-button>
             </div>
           </el-card>
+
+          <!-- 设置提醒弹窗 -->
+          <el-dialog v-model="reminderDialogVisible" title="设置提醒" width="420px" :close-on-click-modal="false">
+            <el-form :model="reminderForm" label-width="80px">
+              <el-form-item label="提醒类型">
+                <el-select v-model="reminderForm.type" style="width: 100%;">
+                  <el-option label="健康检查" value="health_check" />
+                  <el-option label="疫苗接种" value="vaccine" />
+                  <el-option label="体重称量" value="weigh" />
+                  <el-option label="发情监测" value="estrus" />
+                  <el-option label="出栏计划" value="sale" />
+                  <el-option label="其他" value="other" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="提醒日期">
+                <el-date-picker v-model="reminderForm.date" type="date" placeholder="选择日期"
+                  style="width: 100%;" value-format="YYYY-MM-DD" />
+              </el-form-item>
+              <el-form-item label="备注">
+                <el-input v-model="reminderForm.note" type="textarea" :rows="3" placeholder="可选备注" />
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="reminderDialogVisible = false">取消</el-button>
+              <el-button type="success" @click="saveReminder">保存提醒</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 编辑信息弹窗 -->
+          <el-dialog v-model="editDialogVisible" title="编辑牛只信息" width="480px" :close-on-click-modal="false">
+            <el-form :model="editForm" label-width="90px">
+              <el-form-item label="耳标号">
+                <el-input :value="cattle.ear_tag" disabled />
+              </el-form-item>
+              <el-form-item label="品种">
+                <el-input v-model="editForm.breed" placeholder="如：安格斯、西门塔尔" />
+              </el-form-item>
+              <el-form-item label="性别">
+                <el-select v-model="editForm.gender" style="width: 100%;">
+                  <el-option label="公牛" value="male" />
+                  <el-option label="母牛" value="female" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="出生日期">
+                <el-date-picker v-model="editForm.birth_date" type="date" placeholder="选择日期"
+                  style="width: 100%;" value-format="YYYY-MM-DD" />
+              </el-form-item>
+              <el-form-item label="体重(kg)">
+                <el-input-number v-model="editForm.weight" :min="0" :max="2000" :precision="1" style="width: 100%;" />
+              </el-form-item>
+              <el-form-item label="状态">
+                <el-select v-model="editForm.status" style="width: 100%;">
+                  <el-option label="在养" value="active" />
+                  <el-option label="已出栏" value="sold" />
+                  <el-option label="死亡" value="deceased" />
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="editDialogVisible = false">取消</el-button>
+              <el-button type="warning" :loading="saving" @click="saveEdit">保存</el-button>
+            </template>
+          </el-dialog>
         </el-col>
       </el-row>
     </div>
@@ -246,6 +309,7 @@ import { useRoute } from 'vue-router'
 import { getCattleHistory } from '@/api/statistics'
 import { ElMessage } from 'element-plus'
 import { Food, User, Moon, Position, Coffee, Download, Bell, Edit } from '@element-plus/icons-vue'
+import api from '@/api/index'
 
 const route = useRoute()
 const cattleData = ref(null)
@@ -617,6 +681,101 @@ const fetchCattleDetail = async () => {
     ElMessage.error('获取牛只数据失败')
   } finally {
     loading.value = false
+  }
+}
+
+// ─── 导出数据 ──────────────────────────────────────────────────────────────────
+const handleExport = () => {
+  const c = cattle.value
+  const stats = dailyStatistics.value || []
+  const lines = [
+    '日期,进食(分钟),站立(分钟),卧躺(分钟),行走(分钟),饮水(分钟)',
+    ...stats.map(s =>
+      [
+        (s.stat_date || '').slice(0, 10),
+        s.eating_time || 0,
+        s.standing_time || 0,
+        s.lying_time || 0,
+        s.walking_time || 0,
+        s.drinking_time || 0
+      ].join(',')
+    )
+  ]
+  const header = `耳标号,${c.ear_tag || ''}\n品种,${c.breed || ''}\n性别,${getGenderText(c.gender)}\n体重,${c.weight || ''}kg\n状态,${getHealthText(c.status)}\n\n`
+  const csvContent = '\uFEFF' + header + lines.join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `cattle_${c.ear_tag || route.params.id}_${new Date().toISOString().slice(0,10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('数据已导出')
+}
+
+// ─── 设置提醒 ──────────────────────────────────────────────────────────────────
+const reminderDialogVisible = ref(false)
+const reminderForm = ref({ type: 'health_check', date: '', note: '' })
+
+const saveReminder = () => {
+  if (!reminderForm.value.date) {
+    ElMessage.warning('请选择提醒日期')
+    return
+  }
+  const typeMap = {
+    health_check: '健康检查', vaccine: '疫苗接种', weigh: '体重称量',
+    estrus: '发情监测', sale: '出栏计划', other: '其他'
+  }
+  // 持久化到 localStorage，以耳标号为 key
+  const key = `reminders_${cattle.value.ear_tag || route.params.id}`
+  const existing = JSON.parse(localStorage.getItem(key) || '[]')
+  existing.push({
+    type: reminderForm.value.type,
+    typeLabel: typeMap[reminderForm.value.type] || reminderForm.value.type,
+    date: reminderForm.value.date,
+    note: reminderForm.value.note,
+    createdAt: new Date().toISOString()
+  })
+  localStorage.setItem(key, JSON.stringify(existing))
+  ElMessage.success(`已设置 ${typeMap[reminderForm.value.type]} 提醒（${reminderForm.value.date}）`)
+  reminderDialogVisible.value = false
+  reminderForm.value = { type: 'health_check', date: '', note: '' }
+}
+
+// ─── 编辑信息 ──────────────────────────────────────────────────────────────────
+const editDialogVisible = ref(false)
+const saving = ref(false)
+const editForm = ref({ breed: '', gender: 'male', birth_date: '', weight: 0, status: 'healthy' })
+
+const openEditDialog = () => {
+  const c = cattle.value
+  editForm.value = {
+    breed: c.breed || '',
+    gender: c.gender || 'male',
+    birth_date: c.birth_date ? c.birth_date.slice(0, 10) : '',
+    weight: c.weight ? Number(c.weight) : 0,
+    status: c.status || 'healthy'
+  }
+  editDialogVisible.value = true
+}
+
+const saveEdit = async () => {
+  saving.value = true
+  try {
+    const earTag = cattle.value.ear_tag || cattle.value.earTag
+    const res = await api.put(`/cattle/${earTag}`, editForm.value)
+    if (res.data?.success) {
+      ElMessage.success('保存成功')
+      editDialogVisible.value = false
+      // 刷新页面数据
+      await fetchCattleDetail()
+    } else {
+      ElMessage.error(res.data?.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败：' + (e?.response?.data?.message || e.message))
+  } finally {
+    saving.value = false
   }
 }
 

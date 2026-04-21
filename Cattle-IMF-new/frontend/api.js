@@ -106,7 +106,20 @@ const Api = {
       return this.mockData.measurements.filter(m => m.cattle_ear_tag_id === earTagId);
     }
     const res = await fetch(`${API_BASE}/cattle/${encodeURIComponent(earTagId)}/measurements`, { headers: this.authHeaders() });
-    return res.json();
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+    // 后端返回 camelCase Prisma 字段，映射为前端使用的 snake_case
+    return data.map(m => ({
+      id: m.id,
+      measurement_date: m.measurementDate,
+      backfat_thickness: m.backfatThickness,
+      ribeye_area: m.ribeyeArea,
+      intramuscular_fat_imf: m.intramuscularFatImf,
+      ribeye_height: m.ribeyeHeight,
+      ribeye_width: m.ribeyeWidth,
+      notes: m.notes,
+      simulated_grade: m.simulatedGrade,
+    }));
   },
 
   calculateMockGrade(imf) {

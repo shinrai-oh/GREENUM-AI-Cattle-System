@@ -21,6 +21,7 @@ import tmrTasksRouter from './routes/tmr/tasks';
 import tmrEventsRouter from './routes/tmr/events';
 import tmrRoiRouter from './routes/tmr/roi';
 import { setupTmrSocket } from './websocket/tmr';
+import { runImfSeed } from './imfSeed';
 
 const app = express();
 const httpServer = createServer(app);
@@ -145,4 +146,6 @@ const PORT = Number(process.env.PORT) || 3000;
 httpServer.listen(PORT, () => {
   console.log(`统一后端已启动: http://localhost:${PORT}`);
   console.log('模块: 认证 | 公共数据 | IMF肉质评估 | 行为监控 | TMR饲料配比');
+  // 自动写入 IMF 示范数据（仅首次或数据不足时执行）
+  runImfSeed().catch((err) => console.error('IMF seed 失败:', err));
 });
