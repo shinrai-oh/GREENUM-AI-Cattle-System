@@ -1,0 +1,52 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String
+  role         String
+  measurements Measurement[]
+}
+
+model CattleGroup {
+  id          Int             @id @default(autoincrement())
+  groupName   String
+  description String?
+  cattle      CattleProfile[]
+}
+
+model CattleProfile {
+  id            Int           @id @default(autoincrement())
+  earTagId      String        @unique
+  birthDate     DateTime?
+  breed         String?
+  sex           String?
+  sireEarTagId  String?
+  damEarTagId   String?
+  groupId       Int?
+  group         CattleGroup?  @relation(fields: [groupId], references: [id])
+  measurements  Measurement[]
+}
+
+model Measurement {
+  id                    Int       @id @default(autoincrement())
+  cattleProfileId       Int
+  userId                Int
+  measurementDate       DateTime
+  backfatThickness      Float?
+  ribeyeArea            Float?
+  intramuscularFatImf   Float?
+  ribeyeHeight          Float?
+  ribeyeWidth           Float?
+  notes                 String?
+  simulatedGrade        String?
+  cattleProfile         CattleProfile @relation(fields: [cattleProfileId], references: [id])
+  user                  User         @relation(fields: [userId], references: [id])
+}

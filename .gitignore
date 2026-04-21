@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+.env.windows
+# Keep example files
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Database files (SQLite)
+*.db
+*.db-journal
+*.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Bundled Node.js runtime (83MB — too large)
+TMR Monitoring/node-v20.17.0-win-x64/
+
+# Large binary installers and runtimes — distribute via GitHub Releases instead
+Cattle-IMF-new/installer/Output/
+Cattle-IMF-new/vendor/node/
+Cattle-Monitoring/windows-installer/*.exe
+Cattle-Monitoring/windows-installer/_tools/
+
+# Temp files
+tmr_stderr.txt
+*.tmp
+
+# PDF manuals (generated artifacts — regenerate with make-pdf)
+Doc-ref/*.pdf
+
+# Claude Code local config (machine-specific)
+**/.claude/settings.local.json
+**/.claude/launch.json

@@ -1,0 +1,22 @@
+{
+  "users": [
+    { "id": 1, "username": "admin", "role": "admin" },
+    { "id": 2, "username": "operator", "role": "operator" }
+  ],
+  "cattle_groups": [
+    { "id": 1, "group_name": "育肥A组", "description": "高能量饲喂" },
+    { "id": 2, "group_name": "后备母牛群", "description": "维持饲喂" }
+  ],
+  "cattle_profiles": [
+    { "id": 1, "ear_tag_id": "E1001", "birth_date": "2023-03-05", "breed": "西门塔尔", "sex": "male", "sire_ear_tag_id": "S001", "dam_ear_tag_id": "D001", "group_id": 1 },
+    { "id": 2, "ear_tag_id": "E1002", "birth_date": "2023-02-21", "breed": "安格斯", "sex": "female", "sire_ear_tag_id": "S002", "dam_ear_tag_id": "D002", "group_id": 2 },
+    { "id": 3, "ear_tag_id": "E1003", "birth_date": "2022-12-10", "breed": "安格斯", "sex": "male", "sire_ear_tag_id": "S003", "dam_ear_tag_id": "D003", "group_id": 1 }
+  ],
+  "measurements": [
+    { "id": 1, "cattle_profile_id": 1, "cattle_ear_tag_id": "E1001", "user_id": 2, "measurement_date": "2025-09-01T10:00:00Z", "backfat_thickness": 3.2, "ribeye_area": 85.4, "intramuscular_fat_imf": 3.5, "ribeye_height": 7.4, "ribeye_width": 11.2, "notes": "IMG-001", "simulated_grade": "Choice+ (A3)" },
+    { "id": 2, "cattle_profile_id": 1, "cattle_ear_tag_id": "E1001", "user_id": 2, "measurement_date": "2025-10-01T10:00:00Z", "backfat_thickness": 3.8, "ribeye_area": 88.0, "intramuscular_fat_imf": 4.6, "ribeye_height": 7.6, "ribeye_width": 11.3, "notes": "IMG-002", "simulated_grade": "Prime (A4)" },
+    { "id": 3, "cattle_profile_id": 2, "cattle_ear_tag_id": "E1002", "user_id": 2, "measurement_date": "2025-09-05T10:00:00Z", "backfat_thickness": 2.1, "ribeye_area": 76.2, "intramuscular_fat_imf": 2.3, "ribeye_height": 6.8, "ribeye_width": 10.1, "notes": "IMG-003", "simulated_grade": "Choice (A2)" },
+    { "id": 4, "cattle_profile_id": 3, "cattle_ear_tag_id": "E1003", "user_id": 2, "measurement_date": "2025-08-20T10:00:00Z", "backfat_thickness": 4.9, "ribeye_area": 92.1, "intramuscular_fat_imf": 6.1, "ribeye_height": 8.1, "ribeye_width": 12.2, "notes": "IMG-004", "simulated_grade": "Prime+ (A5)" }
+  ]
+}
+

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牛只行为图表测试 - 真实数据</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <h1>牛只行为图表测试 - 真实数据</h1>
+    <div id="test-chart" style="width: 800px; height: 400px; border: 1px solid #ccc; margin: 20px 0;"></div>
+    <div id="debug-info" style="background: #f5f5f5; padding: 10px; margin: 20px 0; font-family: monospace; font-size: 12px;"></div>
+    
+    <script>
+        async function loadAndDisplayChart() {
+            try {
+                console.log('开始获取数据...');
+                
+                // 获取牛只176的历史数据
+                const response = await fetch('http://localhost/api/v1/statistics/cattle/176/history');
+                const result = await response.json();
+                
+                console.log('API响应:', result);
+                
+                if (!result.success || !result.data.daily_statistics) {
+                    throw new Error('API数据格式错误');
+                }
+                
+                const data = result.data.daily_statistics;
+                console.log('获取到数据条数:', data.length);
+                
+                // 取最近7天数据
+                const recentData = data.slice(-7);
+                console.log('最近7天数据:', recentData);
+                
+                // 处理数据
+                const dates = recentData.map(item => {
+                    const date = new Date(item.stat_date);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                });
+                
+                const eatingData = recentData.map(item => Math.round((item.eating_time || 0) / 60));
+                const standingData = recentData.map(item => Math.round((item.standing_time || 0) / 60));
+                const lyingData = recentData.map(item => Math.round((item.lying_time || 0) / 60));
+                const walkingData = recentData.map(item => Math.round((item.walking_time || 0) / 60));
+                const drinkingData = recentData.map(item => Math.round((item.drinking_time || 0) / 60));
+                
+                console.log('处理后的数据:');
+                console.log('dates:', dates);
+                console.log('eatingData:', eatingData);
+                console.log('standingData:', standingData);
+                console.log('lyingData:', lyingData);
+                console.log('walkingData:', walkingData);
+                console.log('drinkingData:', drinkingData);
+                
+                // 显示调试信息
+                document.getElementById('debug-info').innerHTML = `
+                    <h3>调试信息:</h3>
+                    <p>数据总数: ${data.length}</p>
+                    <p>最近7天日期: ${dates.join(', ')}</p>
+                    <p>进食数据: ${eatingData.join(', ')} (小时)</p>
+                    <p>站立数据: ${standingData.join(', ')} (小时)</p>
+                    <p>躺卧数据: ${lyingData.join(', ')} (小时)</p>
+                    <p>行走数据: ${walkingData.join(', ')} (小时)</p>
+                    <p>饮水数据: ${drinkingData.join(', ')} (小时)</p>
+                `;
+                
+                // 初始化图表
+                const chartDom = document.getElementById('test-chart');
+                const myChart = echarts.init(chartDom);
+                
+                const option = {
+                    title: {
+                        text: '牛只行为趋势 (ID: 176)'
+                    },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: ['进食', '站立', '躺卧', '行走', '饮水']
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: dates
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '时间(小时)'
+                    },
+                    series: [
+                        {
+                            name: '进食',
+                            type: 'line',
+                            data: eatingData,
+                            smooth: true,
+                            lineStyle: { color: '#67C23A' },
+                            itemStyle: { color: '#67C23A' }
+                        },
+                        {
+                            name: '站立',
+                            type: 'line',
+                            data: standingData,
+                            smooth: true,
+                            lineStyle: { color: '#409EFF' },
+                            itemStyle: { color: '#409EFF' }
+                        },
+                        {
+                            name: '躺卧',
+                            type: 'line',
+                            data: lyingData,
+                            smooth: true,
+                            lineStyle: { color: '#E6A23C' },
+                            itemStyle: { color: '#E6A23C' }
+                        },
+                        {
+                            name: '行走',
+                            type: 'line',
+                            data: walkingData,
+                            smooth: true,
+                            lineStyle: { color: '#F56C6C' },
+                            itemStyle: { color: '#F56C6C' }
+                        },
+                        {
+                            name: '饮水',
+                            type: 'line',
+                            data: drinkingData,
+                            smooth: true,
+                            lineStyle: { color: '#909399' },
+                            itemStyle: { color: '#909399' }
+                        }
+                    ]
+                };
+                
+                myChart.setOption(option);
+                console.log('图表设置成功');
+                
+            } catch (error) {
+                console.error('错误:', error);
+                document.getElementById('debug-info').innerHTML = `<h3>错误:</h3><p style="color: red;">${error.message}</p>`;
+            }
+        }
+        
+        // 页面加载完成后执行
+        window.addEventListener('load', loadAndDisplayChart);
+    </script>
+</body>
+</html>

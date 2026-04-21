@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表测试</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <h1>牛只行为数据图表测试</h1>
+    <div id="chart" style="width: 800px; height: 400px; border: 1px solid #ccc;"></div>
+    <div id="status"></div>
+    <div id="data"></div>
+
+    <script>
+        async function testChart() {
+            const statusDiv = document.getElementById('status');
+            const dataDiv = document.getElementById('data');
+            
+            try {
+                statusDiv.innerHTML = '正在获取数据...';
+                
+                // 获取API数据
+                const response = await fetch('http://localhost/api/v1/statistics/cattle/176/history');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'API调用失败');
+                }
+                
+                const dailyStats = result.data.daily_statistics;
+                statusDiv.innerHTML = `数据获取成功！共 ${dailyStats.length} 条记录`;
+                
+                // 显示原始数据
+                dataDiv.innerHTML = '<h3>原始数据（前3条）:</h3><pre>' + 
+                    JSON.stringify(dailyStats.slice(0, 3), null, 2) + '</pre>';
+                
+                // 处理数据（取最近7天）
+                const recentData = dailyStats.slice(0, 7);
+                const dates = recentData.map(item => item.stat_date);
+                const eatingData = recentData.map(item => item.eating_time || 0);
+                const standingData = recentData.map(item => item.standing_time || 0);
+                const lyingData = recentData.map(item => item.lying_time || 0);
+                const walkingData = recentData.map(item => item.walking_time || 0);
+                const drinkingData = recentData.map(item => item.drinking_time || 0);
+                
+                // 初始化图表
+                const chartDom = document.getElementById('chart');
+                const myChart = echarts.init(chartDom);
+                
+                const option = {
+                    title: {
+                        text: '牛只行为统计',
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross'
+                        }
+                    },
+                    legend: {
+                        data: ['进食', '站立', '躺卧', '行走', '饮水'],
+                        top: 30
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: dates,
+                        axisLabel: {
+                            rotate: 45
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '时间(分钟)'
+                    },
+                    series: [
+                        {
+                            name: '进食',
+                            type: 'line',
+                            data: eatingData,
+                            smooth: true,
+                            itemStyle: { color: '#5470c6' }
+                        },
+                        {
+                            name: '站立',
+                            type: 'line',
+                            data: standingData,
+                            smooth: true,
+                            itemStyle: { color: '#91cc75' }
+                        },
+                        {
+                            name: '躺卧',
+                            type: 'line',
+                            data: lyingData,
+                            smooth: true,
+                            itemStyle: { color: '#fac858' }
+                        },
+                        {
+                            name: '行走',
+                            type: 'line',
+                            data: walkingData,
+                            smooth: true,
+                            itemStyle: { color: '#ee6666' }
+                        },
+                        {
+                            name: '饮水',
+                            type: 'line',
+                            data: drinkingData,
+                            smooth: true,
+                            itemStyle: { color: '#73c0de' }
+                        }
+                    ]
+                };
+                
+                myChart.setOption(option);
+                
+                // 响应式调整
+                window.addEventListener('resize', function() {
+                    myChart.resize();
+                });
+                
+                statusDiv.innerHTML += '<br>图表渲染成功！';
+                
+            } catch (error) {
+                statusDiv.innerHTML = `错误: ${error.message}`;
+                console.error('测试失败:', error);
+            }
+        }
+        
+        // 页面加载后执行测试
+        window.onload = testChart;
+    </script>
+</body>
+</html>

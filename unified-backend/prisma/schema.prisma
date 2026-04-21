@@ -1,0 +1,243 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==================== 公共表 (shared_*) ====================
+
+model SharedUser {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("operator") // admin, operator
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  imfMeasurements ImfMeasurement[]
+
+  @@map("shared_users")
+}
+
+model SharedFarm {
+  id            Int      @id @default(autoincrement())
+  name          String
+  address       String?
+  contactPerson String?
+  contactPhone  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pens    SharedPen[]
+  cattle  SharedCattle[]
+  cameras SharedCamera[]
+
+  @@map("shared_farms")
+}
+
+model SharedPen {
+  id           Int    @id @default(autoincrement())
+  farmId       Int
+  penNumber    String
+  capacity     Int?
+  currentCount Int    @default(0)
+
+  farm    SharedFarm     @relation(fields: [farmId], references: [id])
+  cattle  SharedCattle[]
+  cameras SharedCamera[]
+
+  @@unique([farmId, penNumber])
+  @@map("shared_pens")
+}
+
+model SharedCattle {
+  id        Int       @id @default(autoincrement())
+  earTag    String    @unique
+  farmId    Int
+  penId     Int?
+  breed     String?
+  birthDate DateTime?
+  gender    String?   // M / F
+  weight    Float?
+  status    String    @default("active") // active, sold, deceased
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  farm  SharedFarm @relation(fields: [farmId], references: [id])
+  pen   SharedPen? @relation(fields: [penId], references: [id])
+
+  imfGroupId Int?
+  imfGroup   ImfCattleGroup? @relation(fields: [imfGroupId], references: [id])
+
+  imfMeasurements   ImfMeasurement[]
+  monitorBehavior   MonitorBehaviorData[]
+  monitorDailyStats MonitorDailyStatistics[]
+
+  @@map("shared_cattle")
+}
+
+model SharedCamera {
+  id        Int      @id @default(autoincrement())
+  name      String
+  rtspUrl   String?
+  location  String?
+  farmId    Int
+  penId     Int?
+  status    String   @default("active") // active, inactive, maintenance
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  farm SharedFarm @relation(fields: [farmId], references: [id])
+  pen  SharedPen? @relation(fields: [penId], references: [id])
+
+  monitorBehavior MonitorBehaviorData[]
+
+  @@map("shared_cameras")
+}
+
+// ==================== IMF 模块 (imf_*) ====================
+
+model ImfCattleGroup {
+  id          Int      @id @default(autoincrement())
+  groupName   String
+  description String?
+  createdAt   DateTime @default(now())
+
+  cattle SharedCattle[]
+
+  @@map("imf_cattle_groups")
+}
+
+model ImfMeasurement {
+  id                  Int      @id @default(autoincrement())
+  cattleId            Int
+  userId              Int
+  measurementDate     DateTime
+  backfatThickness    Float?
+  ribeyeArea          Float?
+  intramuscularFatImf Float?
+  ribeyeHeight        Float?
+  ribeyeWidth         Float?
+  simulatedGrade      String?
+  notes               String?
+  createdAt           DateTime @default(now())
+
+  cattle SharedCattle @relation(fields: [cattleId], references: [id])
+  user   SharedUser   @relation(fields: [userId], references: [id])
+
+  @@map("imf_measurements")
+}
+
+// ==================== 监控模块 (monitor_*) ====================
+
+model MonitorBehaviorData {
+  id           Int       @id @default(autoincrement())
+  cattleId     Int
+  penId        Int?
+  behaviorType String    // eating, standing, lying, walking, drinking, estrus
+  startTime    DateTime
+  endTime      DateTime?
+  duration     Int?      // 秒
+  cameraId     Int?
+  confidence   Float?
+  createdAt    DateTime  @default(now())
+
+  cattle SharedCattle  @relation(fields: [cattleId], references: [id])
+  camera SharedCamera? @relation(fields: [cameraId], references: [id])
+
+  @@map("monitor_behavior_data")
+}
+
+model MonitorDailyStatistics {
+  id                Int      @id @default(autoincrement())
+  cattleId          Int
+  statDate          DateTime @db.Date
+  eatingTime        Int      @default(0) // 秒
+  standingTime      Int      @default(0)
+  lyingTime         Int      @default(0)
+  walkingTime       Int      @default(0)
+  drinkingTime      Int      @default(0)
+  totalActiveTime   Int      @default(0)
+  isEstrus          Boolean  @default(false) // 是否发情
+  estrusIntensity   Float?                   // 发情强度 0-1
+  lastBreedingDate  DateTime? @db.Date       // 上次配种日期
+  pregnancyStatus   String?                  // open/bred/pregnant/calving
+
+  cattle SharedCattle @relation(fields: [cattleId], references: [id])
+
+  @@unique([cattleId, statDate])
+  @@map("monitor_daily_statistics")
+}
+
+// ==================== TMR 模块 (tmr_*) ====================
+
+model TmrDevice {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cameraIp  String?  // RTSP URL
+  status    String   @default("idle") // idle, mixing, done
+  createdAt DateTime @default(now())
+
+  roi    TmrCameraRoi?
+  tasks  TmrDailyTask[]
+  events TmrFeedingEvent[]
+
+  @@map("tmr_devices")
+}
+
+model TmrCameraRoi {
+  id        Int      @id @default(autoincrement())
+  deviceId  Int      @unique
+  roi1      Json
+  roi2      Json
+  updatedAt DateTime @updatedAt
+
+  device TmrDevice @relation(fields: [deviceId], references: [id])
+
+  @@map("tmr_camera_roi")
+}
+
+model TmrFeedFormula {
+  id        Int      @id @default(autoincrement())
+  name      String
+  items     Json     // [{material, targetWeightKg}]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks TmrDailyTask[]
+
+  @@map("tmr_feed_formulas")
+}
+
+model TmrDailyTask {
+  id        Int      @id @default(autoincrement())
+  deviceId  Int
+  taskDate  DateTime @db.Date
+  formulaId Int
+  status    String   @default("pending") // pending, mixing, done
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  device  TmrDevice      @relation(fields: [deviceId], references: [id])
+  formula TmrFeedFormula @relation(fields: [formulaId], references: [id])
+
+  @@map("tmr_daily_tasks")
+}
+
+model TmrFeedingEvent {
+  id           Int      @id @default(autoincrement())
+  deviceId     Int
+  timestamp    DateTime
+  material     String
+  weight       Float
+  snapshotPath String?
+  createdAt    DateTime @default(now())
+
+  device TmrDevice @relation(fields: [deviceId], references: [id])
+
+  @@map("tmr_feeding_events")
+}

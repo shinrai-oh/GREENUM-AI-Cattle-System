@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECharts 测试</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <h1>ECharts 图表测试</h1>
+    <div id="test-chart" style="width: 800px; height: 400px; border: 1px solid #ccc;"></div>
+    
+    <script>
+        // 初始化图表
+        const chartDom = document.getElementById('test-chart');
+        const myChart = echarts.init(chartDom);
+        
+        // 测试数据
+        const testData = {
+            dates: ['10/5', '10/6', '10/7', '10/8', '10/9'],
+            eating: [3, 4, 3, 4, 2],
+            standing: [5, 4, 5, 4, 3],
+            lying: [11, 10, 10, 11, 11],
+            walking: [1, 1, 1, 1, 1],
+            drinking: [0, 0, 0, 0, 0]
+        };
+        
+        const option = {
+            title: {
+                text: '牛只行为趋势测试'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['进食', '站立', '躺卧', '行走', '饮水']
+            },
+            xAxis: {
+                type: 'category',
+                data: testData.dates
+            },
+            yAxis: {
+                type: 'value',
+                name: '时间(小时)'
+            },
+            series: [
+                {
+                    name: '进食',
+                    type: 'line',
+                    data: testData.eating,
+                    smooth: true,
+                    lineStyle: { color: '#67C23A' },
+                    itemStyle: { color: '#67C23A' }
+                },
+                {
+                    name: '站立',
+                    type: 'line',
+                    data: testData.standing,
+                    smooth: true,
+                    lineStyle: { color: '#409EFF' },
+                    itemStyle: { color: '#409EFF' }
+                },
+                {
+                    name: '躺卧',
+                    type: 'line',
+                    data: testData.lying,
+                    smooth: true,
+                    lineStyle: { color: '#E6A23C' },
+                    itemStyle: { color: '#E6A23C' }
+                },
+                {
+                    name: '行走',
+                    type: 'line',
+                    data: testData.walking,
+                    smooth: true,
+                    lineStyle: { color: '#F56C6C' },
+                    itemStyle: { color: '#F56C6C' }
+                },
+                {
+                    name: '饮水',
+                    type: 'line',
+                    data: testData.drinking,
+                    smooth: true,
+                    lineStyle: { color: '#909399' },
+                    itemStyle: { color: '#909399' }
+                }
+            ]
+        };
+        
+        myChart.setOption(option);
+        
+        console.log('ECharts 测试图表已初始化');
+        console.log('图表实例:', myChart);
+        console.log('测试数据:', testData);
+    </script>
+</body>
+</html>

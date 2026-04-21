@@ -1,0 +1,125 @@
+services:
+  # ==================== 数据库 ====================
+  mysql:
+    image: mysql:8.0
+    container_name: cattle_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: cattle_root_123
+      MYSQL_DATABASE: cattle_unified
+      MYSQL_USER: cattle_user
+      MYSQL_PASSWORD: cattle_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - cattle_net
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ucattle_user", "-pcattle_pass"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # ==================== 统一后端 ====================
+  unified-backend:
+    build:
+      context: ./unified-backend
+      dockerfile: Dockerfile
+    container_name: cattle_unified_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "mysql://cattle_user:cattle_pass@mysql:3306/cattle_unified?charset=utf8mb4"
+      JWT_SECRET: "change-me-in-production-random-secret-key"
+      PORT: "3000"
+      NODE_ENV: "production"
+      PYTHON_SIDECAR_URL: "http://python-sidecar:5000"
+      INIT_ADMIN_USERNAME: "admin"
+      INIT_ADMIN_PASSWORD: "admin123"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - cattle_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ==================== Python Sidecar (OpenCV/RTSP) ====================
+  python-sidecar:
+    build:
+      context: ./python-sidecar
+      dockerfile: Dockerfile
+    container_name: cattle_python_sidecar
+    restart: always
+    networks:
+      - cattle_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==================== 前端: IMF 肉质评估系统 (端口 8081) ====================
+  frontend-imf:
+    build:
+      context: ./Cattle-IMF-new/frontend
+      dockerfile: Dockerfile
+    container_name: cattle_frontend_imf
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      unified-backend:
+        condition: service_healthy
+    networks:
+      - cattle_net
+
+  # ==================== 前端: 行为监控系统 (端口 8082) ====================
+  frontend-monitoring:
+    build:
+      context: ./Cattle-Monitoring/frontend
+      dockerfile: Dockerfile
+    container_name: cattle_frontend_monitoring
+    restart: always
+    ports:
+      - "8082:80"
+    depends_on:
+      unified-backend:
+        condition: service_healthy
+    networks:
+      - cattle_net
+
+  # ==================== 前端: TMR 饲料配比系统 (端口 8083) ====================
+  frontend-tmr:
+    build:
+      context: ./TMR Monitoring/web
+      dockerfile: Dockerfile
+    container_name: cattle_frontend_tmr
+    restart: always
+    ports:
+      - "8083:80"
+    depends_on:
+      unified-backend:
+        condition: service_healthy
+    networks:
+      - cattle_net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  cattle_net:
+    driver: bridge

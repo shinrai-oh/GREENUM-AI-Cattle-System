@@ -1,0 +1,20 @@
+{
+  "name": "tmr-monitoring-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend service for TMR monitoring (Windows, local deploy)",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "service:install": "node service-install.js",
+    "service:uninstall": "node service-uninstall.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "node-windows": "^1.0.0-beta.8",
+    "socket.io": "^4.7.5"
+  }
+}
