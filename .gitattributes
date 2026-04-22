@@ -1,0 +1,25 @@
+# SQL dump: 始终以 LF 存储，禁止 CRLF 转换，保证中文 UTF-8 完整
+*.sql text eol=lf
+
+# Windows 批处理脚本保持 CRLF
+*.bat text eol=crlf
+
+# 其余文本文件统一 LF
+*.ts   text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.tsx  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.conf text eol=lf
+*.sh   text eol=lf
+
+# 二进制文件不转换
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.node binary
