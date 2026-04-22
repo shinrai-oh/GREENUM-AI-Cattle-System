@@ -16,7 +16,6 @@ const STATUS_COLOR = {
 
 export default function Dashboard() {
   const [devices, setDevices] = useState([]);
-  // Map deviceId -> latest status payload from socket
   const [statuses, setStatuses] = useState({});
   const [connected, setConnected] = useState(false);
 
@@ -31,7 +30,6 @@ export default function Dashboard() {
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
 
-    // Server emits one object per device; accumulate into a map keyed by deviceId
     socket.on('status', (payload) => {
       setStatuses(prev => ({ ...prev, [payload.deviceId]: payload }));
     });
@@ -58,6 +56,8 @@ export default function Dashboard() {
           const status = st?.status ?? d.status ?? 'idle';
           const progress = st?.progressPct ?? 0;
           const items = st?.items ?? [];
+          const taskDate = st?.taskDate ?? null;
+          const formulaName = st?.formulaName ?? null;
 
           return (
             <div key={d.id} style={{
@@ -81,6 +81,13 @@ export default function Dashboard() {
                 </span>
               </div>
 
+              {taskDate && (
+                <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                  最近任务：{taskDate}
+                  {formulaName && <span style={{ marginLeft: 6, color: '#555' }}>· {formulaName}</span>}
+                </div>
+              )}
+
               <div style={{ marginTop: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
                   <span>混料进度</span>
@@ -98,24 +105,26 @@ export default function Dashboard() {
 
               {items.length > 0 && (
                 <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>当前配方原料：</div>
-                  {items.map(item => (
-                    <div key={item.material} style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: 13,
-                      padding: '3px 0',
-                      borderBottom: '1px solid #f0f0f0',
-                    }}>
-                      <span>{item.material}</span>
-                      <span style={{ color: '#555' }}>目标 {item.targetWeightKg} kg</span>
-                    </div>
-                  ))}
+                  <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>配方原料：</div>
+                  <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                    {items.map(item => (
+                      <div key={item.material} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: 13,
+                        padding: '3px 0',
+                        borderBottom: '1px solid #f0f0f0',
+                      }}>
+                        <span>{item.material}</span>
+                        <span style={{ color: '#555' }}>{item.targetWeightKg} kg</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {items.length === 0 && (
-                <div style={{ marginTop: 12, fontSize: 13, color: '#bbb' }}>暂无今日配方数据</div>
+              {!st && (
+                <div style={{ marginTop: 12, fontSize: 13, color: '#bbb' }}>等待数据...</div>
               )}
             </div>
           );

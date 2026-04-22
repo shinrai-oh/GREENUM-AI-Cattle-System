@@ -20,7 +20,6 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('tmr_token');
-      // Trigger re-render by dispatching a storage event
       window.dispatchEvent(new Event('tmr-auth-expired'));
     }
     return Promise.reject(err);

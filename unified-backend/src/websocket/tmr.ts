@@ -16,18 +16,17 @@ export function setupTmrSocket(io: SocketIOServer): void {
       const devices = await prisma.tmrDevice.findMany({
         include: {
           tasks: {
-            where: { taskDate: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
             include: { formula: true },
-            orderBy: { id: 'desc' },
+            orderBy: { taskDate: 'desc' },
             take: 1,
           },
         },
       });
 
       for (const device of devices) {
-        const todayTask = device.tasks[0] || null;
-        const formulaItems = todayTask
-          ? (todayTask.formula.items as { material: string; targetWeightKg: number }[])
+        const latestTask = device.tasks[0] || null;
+        const formulaItems = latestTask
+          ? (latestTask.formula.items as { material: string; targetWeightKg: number }[])
           : [];
 
         io.emit('status', {
@@ -35,6 +34,8 @@ export function setupTmrSocket(io: SocketIOServer): void {
           deviceName: device.name,
           status: device.status,
           progressPct: device.status === 'mixing' ? simulateProgress() : 0,
+          taskDate: latestTask ? latestTask.taskDate.toISOString().slice(0, 10) : null,
+          formulaName: latestTask ? latestTask.formula.name : null,
           items: formulaItems.map((item) => ({
             material: item.material,
             targetWeightKg: item.targetWeightKg,

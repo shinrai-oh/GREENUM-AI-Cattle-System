@@ -91,7 +91,7 @@ export async function runImfSeed() {
   }
 
   // 若已有测量记录过多则保留，否则清空重建
-  if (imfMeasureCount > 0 && imfMeasureCount < 30) {
+  if (e1001MeasureCount > 0 && e1001MeasureCount < 30) {
     await prisma.imfMeasurement.deleteMany({});
   }
 

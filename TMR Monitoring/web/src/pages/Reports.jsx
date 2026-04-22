@@ -12,7 +12,7 @@ function groupEventsByDevice(events) {
 }
 
 export default function Reports() {
-  const [date, setDate] = useState('2021-06-15');
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -62,7 +62,7 @@ export default function Reports() {
           </div>
 
           {(data.tasks || []).length === 0 && (
-            <p style={{ color: '#999' }}>该日期暂无任务数据，请选择有记录的日期（如 2021-06-15）</p>
+            <p style={{ color: '#999' }}>该日期暂无任务数据，请先在「任务下发」页创建当日任务</p>
           )}
 
           {(data.tasks || []).map(task => {

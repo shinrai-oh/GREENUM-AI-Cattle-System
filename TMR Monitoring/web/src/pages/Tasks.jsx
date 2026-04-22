@@ -16,7 +16,7 @@ const STATUS_COLOR = {
 export default function Tasks() {
   const [devices, setDevices] = useState([]);
   const [formulas, setFormulas] = useState([]);
-  const [date, setDate] = useState('2021-06-15');
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({ deviceId: '', formulaId: '' });
   const [creating, setCreating] = useState(false);
